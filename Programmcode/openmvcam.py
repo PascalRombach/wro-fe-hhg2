@@ -45,7 +45,7 @@ def main():
             im.draw_rectangle(*blob.rect())
             pass
 
-        print("END") # Tell the RPi that this frame's data is now over
+        vcp.send(b"END\n") # Tell the RPi that this frame's data is now over
         pass
 
 while True:
