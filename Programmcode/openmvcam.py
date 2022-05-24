@@ -1,12 +1,10 @@
-"""Issue: Blobs not recognise; boundries set properly"""
-
-import sensor, image
-import json
+import sensor, image, pyb
+import json, time
 
 THRESHOLDS = [
     (35,43,53,65,33,40), # Red pillars (code: 1)
-    (37,46,-31,-39,12,16)# Green pillars (code: 2)
-    # Black walls (code: 4)
+    (14,18,-4,-3,0,1),# Green pillars (code: 2)
+    (10,-10,0, 20,0,7) # Black walls (code: 4)
 ]
 """Holds the threshold values for colour tracking"""
 CODE_DESCRIPTORS = {
@@ -27,20 +25,30 @@ sensor.set_vflip(True)
 sensor.set_hmirror(True)
 
 
+vcp = pyb.USB_VCP()
+vcp.init()
+
 # Main process loop
-while True:
-    im = sensor.snapshot()
-    #print(image.rgb_to_lab(im.get_pixel(160,120)))
-    #im.draw_cross(160,120)
+def main():
+    while vcp.isconnected():
+        im = sensor.snapshot()
+        #print(image.rgb_to_lab(im.get_pixel(160,120)))
+        #im.draw_cross(160,120)
 
-    print("BEGIN") # Tell the RPi that a new line of blobs is coming up
-    for blob in im.find_blobs(THRESHOLDS, pixels_threshold=10, area_threshold=10, merge=True):
-        code_str = CODE_DESCRIPTORS[blob.code()]
+        vcp.send(b"BEGIN\n") # Tell the RPi that a new line of blobs is coming up
+        for blob in im.find_blobs(THRESHOLDS, pixels_threshold=10, area_threshold=10, merge=True):
+            if not blob.code() in CODE_DESCRIPTORS.keys(): continue
+            code_str = CODE_DESCRIPTORS[blob.code()]
 
-        data_obj = {"type":code_str,"left_top":(blob.x(),blob.y()),"size":(blob.w(),blob.h())}
-        print(json.dumps(data_obj))
-        #im.draw_rectangle(*blob.rect())
+            data_obj = {"type":code_str,"left_top":(blob.x(),blob.y()),"size":(blob.w(),blob.h())}
+            vcp.send((json.dumps(data_obj)+"\n").encode("utf-8"))
+            im.draw_rectangle(*blob.rect())
+            pass
+
+        print("END") # Tell the RPi that this frame's data is now over
         pass
 
-    print("END") # Tell the RPi that this frame's data is now over
+while True:
+    while not vcp.isconnected(): time.sleep_ms(100)
+    main()
     pass
