@@ -73,7 +73,7 @@ class Communicator:
 
     
     def wait_for_data(self) -> list[Blob]:
-        while not self.conn.readline().startswith(b"BEGIN"): time.sleep(0.1)
+        while not self.conn.readline().decode("utf-8").startswith("BEGIN"): time.sleep(0.1)
     
         end_encountered = False
         lines = []
