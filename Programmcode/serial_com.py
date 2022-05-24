@@ -1,10 +1,19 @@
-import serial, json, dataclasses
+import serial, json, dataclasses, time
 
 @dataclasses.dataclass(frozen=True)
 class Blob:
     type: str
     left_top: list[int,int]
     size: list[int,int]
+
+    @staticmethod
+    def from_json(data : dict):
+        return Blob(
+            data["type"],
+            data["left_top"],
+            data["size"]
+        )
+        pass
 
     @property
     def left(self) -> int:
@@ -64,19 +73,24 @@ class Communicator:
 
     
     def wait_for_data(self) -> list[Blob]:
-        while self._read_packet() != "BEGIN": # Wait for beginning of data transfer
-            pass
-        
-        new_blobs = []
-        while True:
-            last_data = self._read_packet()
-            if last_data == "END": 
-                break
+        while not self.conn.readline().startswith(b"BEGIN"): time.sleep(0.1)
+    
+        end_encountered = False
+        lines = []
+        while not end_encountered:
+            data = self.conn.readline().decode("utf-8")
 
-            new_blobs.append(Blob(**json.loads(last_data)))
+            if data.startswith("END"):
+                end_encountered = True
+                pass
+            else:
+                lines.append(data)
+                pass
             pass
 
-        return new_blobs
+        json_decoded = [json.loads(line) for line in lines]
+
+        return [Blob.from_json(data) for data in json_decoded]
         pass
 
     def close(self):
