@@ -72,25 +72,32 @@ class Communicator:
         pass
 
     
-    def wait_for_data(self) -> list[Blob]:
+    def wait_for_data(self) -> tuple[list[int,int],list[Blob]]:
         while not self.conn.readline().decode("utf-8").startswith("BEGIN"): time.sleep(0.1)
     
         end_encountered = False
-        lines = []
+        size_encountered = False
+        im_size = [None,None]
+        blob_lines = []
         while not end_encountered:
             data = self.conn.readline().decode("utf-8")
 
             if data.startswith("END"):
                 end_encountered = True
                 pass
+            elif size_encountered:
+                blob_lines.append(data)
+                pass
             else:
-                lines.append(data)
+                str_split = data.split(",")
+                im_size[0] = int(str_split[0])
+                im_size[1] = int(str_split[1])
                 pass
             pass
 
-        json_decoded = [json.loads(line) for line in lines]
+        json_decoded = [json.loads(line) for line in blob_lines]
 
-        return [Blob.from_json(data) for data in json_decoded]
+        return im_size, [Blob.from_json(data) for data in json_decoded]
         pass
 
     def close(self):
