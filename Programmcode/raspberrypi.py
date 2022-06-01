@@ -20,6 +20,7 @@ def main():
     steering_motor = buildhat.Motor("B")
     driving_motor = buildhat.Motor("A")
     distance_sensor = buildhat.DistanceSensor("C")
+    color_sensor = buildhat.ColorSensor("D")
 
     while not GPIO.input(GPIO_Port): 
         time.sleep(1)
@@ -30,7 +31,7 @@ def main():
         while True:
             im_size, blobs = com.wait_for_data()
 
-            frame(steering_motor, driving_motor, distance_sensor.get_distance(), im_size,blobs)
+            frame(steering_motor, driving_motor, distance_sensor.get_distance(),color_sensor.get_color() , im_size,blobs)
             pass
         pass
     finally:
@@ -41,3 +42,18 @@ def main():
 if __name__ == "__main__":
     main()
     pass
+
+def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
+    if(distance < 1000):
+        if color == "Orange" : #add real values
+            steering.run_to_position(100, False) #correct values
+        elif color == "blue": #add real values
+            steering.run_to_position(-100,False) #correct values
+    
+    """if no wall blobs infront of camara stop turning""" #possably timing the turn 
+    for blob in blobs:
+        if blob.type == "wall":
+            if blob.bottom <= imageSize[1] - 20: #add correct value
+                if blob.center_x < imageSize[0] // 2:
+                    steering.run_to_poaition(100,False) #add correct data
+    
