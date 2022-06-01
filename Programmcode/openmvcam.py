@@ -40,7 +40,7 @@ def main():
         #im.draw_cross(160,120)
 
         vcp.send(b"BEGIN\n") # Tell the RPi that a new line of blobs is coming up
-        vcp.send(f"{im.width},{im.height}\n".encode("utf-8"))
+        vcp.send(f"{im.width()},{im.height()}\n".encode("utf-8"))
         for blob in im.find_blobs(THRESHOLDS, pixels_threshold=10, area_threshold=10, merge=True):
             if not blob.code() in CODE_DESCRIPTORS.keys(): continue
             code_str = CODE_DESCRIPTORS[blob.code()]
