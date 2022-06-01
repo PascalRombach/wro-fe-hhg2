@@ -4,13 +4,17 @@ import json, time
 THRESHOLDS = [
     (35,43,53,65,33,40), # Red pillars (code: 1)
     (14,18,-4,-3,0,1),# Green pillars (code: 2)
-    (10,-10,0, 20,0,7) # Black walls (code: 4)
+    (10,-10,0, 20,0,7), # Black walls (code: 4)
+    (50,0,15, 60,10,25),# Orange line (code: 8)
+    (45,0,-20, 55,15,-5)#Blue line (code: 16)
 ]
 """Holds the threshold values for colour tracking"""
 CODE_DESCRIPTORS = {
     1: "red_pillar",
     2: "green_pillar",
-    4: "wall"
+    4: "wall",
+    8: "orange_line",
+    16: "blue_line"
 }
 """"Translate the colour codes to strs for easy interpretation"""
 
