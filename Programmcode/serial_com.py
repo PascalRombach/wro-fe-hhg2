@@ -92,6 +92,7 @@ class Communicator:
                 str_split = data.split(",")
                 im_size[0] = int(str_split[0])
                 im_size[1] = int(str_split[1])
+                size_encountered = True
                 pass
             pass
 

@@ -4,9 +4,22 @@ import buildhat
 import time
 import RPi.GPIO as GPIO
 
-def frame(steering_motor, driving_motor, distance, im_size, blobs : list[Blob]):
+def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
+    if(distance < 1000):
+        if color == "Orange" : #add real values
+            steering.run_to_position(100, False) #correct values
+        elif color == "blue": #add real values
+            steering.run_to_position(-100,False) #correct values
     
-    pass
+    """if no wall blobs infront of camara stop turning""" #possably timing the turn 
+    for blob in blobs:
+        if blob.type == "wall":
+            if blob.bottom <= imageSize[1] - 20: #add correct value
+                if blob.center_x < imageSize[0] // 2:
+                    steering.run_to_position(100,False) #add correct data
+                elif blob.center_x > imageSize[0] // 2:
+                    steering.run_to_position(-100,False) #add correct data
+    
 
 def main():
     print(*list_ports_linux.comports(),sep="\n")
@@ -36,24 +49,10 @@ def main():
         pass
     finally:
         com.close()
+        driving_motor.stop()
         pass
     pass
 
 if __name__ == "__main__":
     main()
     pass
-
-def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
-    if(distance < 1000):
-        if color == "Orange" : #add real values
-            steering.run_to_position(100, False) #correct values
-        elif color == "blue": #add real values
-            steering.run_to_position(-100,False) #correct values
-    
-    """if no wall blobs infront of camara stop turning""" #possably timing the turn 
-    for blob in blobs:
-        if blob.type == "wall":
-            if blob.bottom <= imageSize[1] - 20: #add correct value
-                if blob.center_x < imageSize[0] // 2:
-                    steering.run_to_poaition(100,False) #add correct data
-    
