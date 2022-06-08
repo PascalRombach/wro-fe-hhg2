@@ -1,25 +1,53 @@
+from cgitb import reset
+from dis import dis
 from serial_com import Communicator, Blob
 from serial.tools import list_ports_linux
 import buildhat
 import time
 import RPi.GPIO as GPIO
 
-def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
+driveline = 0#set correct data
+#hardwhare info setup distance sensor to the left
+
+def makeTurn(right: bool, steering):#make the car turn aproxamatly 90 degrees will correct error automaticly probably 
+    if right:
+        steering.run_to_position(-100, blocking=False) #add correct data to go right
+        #wait for run distance on drive (set correct data and code)
+    else:
+        steering.run_to_position(100, blocking=False) #add correct data to go left 
+        #wait for run distance on drive (set correct data and code)
+
+
+
+def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
+    
     if(distance < 1000):
-        if color in ("red","yellow") : #add real values
-            steering.run_to_position(100, blocking=False) #correct values
-        elif color == "black": #add real values
-            steering.run_to_position(-100,blocking=False) #correct values
+        if distance2 > 1000:
+            makeTurn(True, steering)
+            return
+        else:
+            makeTurn(False, steering) 
+        return
     
-    """if no wall blobs infront of camara stop turning""" #possably timing the turn 
-    for blob in blobs:
-        if blob.type == "wall":
-            if blob.bottom <= imageSize[1] - 20: #add correct value
-                if blob.center_x < imageSize[0] // 2:
-                    steering.run_to_position(100,blocking=False) #add correct data
-                elif blob.center_x > imageSize[0] // 2:
-                    steering.run_to_position(-100,blocking=False) #add correct data
     
+    redSice = 0
+    greenSice = 0
+    treshold = 0#set Treshold for minimal sice
+    for blob in blobs: 
+        if blob.type == "red_pillar":
+            redSice += blob.size
+        elif blob.type == "green_pillar":
+            greenSice += blob.size
+    
+    if redSice > treshold and redSice>greenSice:
+        driveline = 0 #set correct data
+    elif greenSice > treshold and greenSice > redSice:
+        driveline = 0#set correct data
+    
+    if distance2 > driveline:
+        steering.run_to_position(100, blocking=False) #add correct data to go left 
+    elif distance2 < driveline:
+        steering.run_to_position(-100, blocking=False) #add correct data to go right 
 
 def main():
     print(*list_ports_linux.comports(),sep="\n")
