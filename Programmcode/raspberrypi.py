@@ -6,19 +6,20 @@ import RPi.GPIO as GPIO
 
 def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
     if(distance < 1000):
+        print(distance)
         if color == "Orange" : #add real values
-            steering.run_to_position(100, False) #correct values
+            steering.run_to_position(100, blocking=False) #correct values
         elif color == "blue": #add real values
-            steering.run_to_position(-100,False) #correct values
+            steering.run_to_position(-100,blocking=False) #correct values
     
     """if no wall blobs infront of camara stop turning""" #possably timing the turn 
     for blob in blobs:
         if blob.type == "wall":
             if blob.bottom <= imageSize[1] - 20: #add correct value
                 if blob.center_x < imageSize[0] // 2:
-                    steering.run_to_position(100,False) #add correct data
+                    steering.run_to_position(100,blocking=False) #add correct data
                 elif blob.center_x > imageSize[0] // 2:
-                    steering.run_to_position(-100,False) #add correct data
+                    steering.run_to_position(-100,blocking=False) #add correct data
     
 
 def main():
@@ -39,7 +40,7 @@ def main():
         time.sleep(1)
         pass
 
-    driving_motor.start(100)
+    driving_motor.start(-25)
     try:
         while True:
             im_size, blobs = com.wait_for_data()
