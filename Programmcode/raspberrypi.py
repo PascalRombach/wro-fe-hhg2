@@ -6,10 +6,9 @@ import RPi.GPIO as GPIO
 
 def frame(steering, drive, distance, color, imageSize, blobs: list[Blob]):
     if(distance < 1000):
-        print(distance)
-        if color == "Orange" : #add real values
+        if color in ("red","yellow") : #add real values
             steering.run_to_position(100, blocking=False) #correct values
-        elif color == "blue": #add real values
+        elif color == "black": #add real values
             steering.run_to_position(-100,blocking=False) #correct values
     
     """if no wall blobs infront of camara stop turning""" #possably timing the turn 
