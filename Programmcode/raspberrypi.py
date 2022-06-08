@@ -39,8 +39,11 @@ def main():
     while not GPIO.input(GPIO_Port): 
         time.sleep(1)
         pass
-
+    
+    # Set motors to start config
+    steering_motor.run_to_position(0)
     driving_motor.start(-25)
+    
     try:
         while True:
             im_size, blobs = com.wait_for_data()
