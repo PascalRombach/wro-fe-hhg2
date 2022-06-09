@@ -6,7 +6,7 @@ import buildhat
 import time
 import RPi.GPIO as GPIO
 
-driveline = 10#set correct data
+driveline = 50#set correct data
 #hardwhare info setup distance sensor to the left
 
 def makeTurn(right: bool, steering):#make the car turn aproxamatly 90 degrees will correct error automaticly probably 
@@ -24,15 +24,17 @@ def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
     if(distance < 1000):
         if distance2 > 1000:
             makeTurn(True, steering)
+            driveline = 900
             return
         else:
             makeTurn(False, steering) 
-        return
+            driveline = 100
+            return
     
     
     redSize = 0
     greenSize = 0
-    treshold = 0#set Treshold for minimal sice
+    treshold = 100#set Treshold for minimal sice
     for blob in blobs: 
         if blob.type == "red_pillar":
             redSize += blob.size
@@ -40,9 +42,9 @@ def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
             greenSize += blob.size
     
     if redSize > treshold and redSize>greenSize:
-        driveline = 0 #set correct data
+        driveline = 900 #set correct data
     elif greenSize > treshold and greenSize > redSize:
-        driveline = 0#set correct data
+        driveline = 50#set correct data
         
     if distance2 <= 1000: # correct sidebarier distance catch
         if distance2 > driveline+20: # correct exeptet error range 
