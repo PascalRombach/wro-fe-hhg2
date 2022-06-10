@@ -16,30 +16,31 @@ def maxRangeConvert(distance: int):
 
 TURN_TIME = 1.2
 LAST_TURN_TIME = -TURN_TIME
+CAN_TURN_AGAIN = True
 def makeTurn(right: bool, steering, drive):#make the car turn aproxamatly 90 degrees will correct error automaticly probably 
-    global LAST_TURN_TIME
-    current_time = time.perf_counter()
-    # print("Time: ",current_time - LAST_TURN_TIME)
-    if current_time - LAST_TURN_TIME <= TURN_TIME: return
-    LAST_TURN_TIME = current_time
+    global CAN_TURN_AGAIN
+    if not CAN_TURN_AGAIN: return
     
+    print("Turning now! Right:",right)
     if right:
-        steering.run_to_position(MAIN_TURN, blocking=False) #add correct data to go right
+        steering.run_to_position(-MAIN_TURN, blocking=False) #add correct data to go right
     else:
-        steering.run_to_position(-MAIN_TURN, blocking=False) #add correct data to go left 
+        steering.run_to_position(MAIN_TURN, blocking=False) #add correct data to go left 
+    CAN_TURN_AGAIN = False
 
 
 TURN_DISTANCE = 1_000
 MAIN_TURN = 100
-SIDE_ADJUST_ANGLE = 20
+SIDE_ADJUST_ANGLE = 40
 def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
-    global driveline
+    global driveline, CAN_TURN_AGAIN
     
     print("Head distance:",distance)
-    print("Side adjust enabled:", time.perf_counter()-LAST_TURN_TIME > TURN_TIME)
+    print("Side distance:",distance2)
+    print("Side adjust enabled:", CAN_TURN_AGAIN)
     
     if(distance < TURN_DISTANCE):
-        if distance2 > 1200:
+        if distance2 < 1200:
             makeTurn(True, steering, drive)
             #driveline = 900
             return
@@ -47,6 +48,8 @@ def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
             makeTurn(False, steering, drive) 
             #driveline = 100
             return
+    if not CAN_TURN_AGAIN and distance == 15000:
+        CAN_TURN_AGAIN = True
     
     
     redSize = 0
@@ -62,16 +65,16 @@ def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
     #     driveline = 900 #set correct data
     # elif greenSize > treshold and greenSize > redSize:
     #     driveline = 50#set correct data
-    if time.perf_counter()-LAST_TURN_TIME > TURN_TIME and distance2 <= 1200: # correct sidebarier distance catch
+    if CAN_TURN_AGAIN: # correct sidebarier distance catch
         #print(distance2)
-        if distance2 > driveline: # correct exeptet error range 
-            #print("Left")
+        if distance2 <= 2000 and distance2 > driveline: # correct exeptet error range 
+            print("Left")
             steering.run_to_position(SIDE_ADJUST_ANGLE, blocking=False) #add correct data to go left 
-        elif distance2 < driveline:#correct exepted error 
-            #print("Right")
+        elif distance2 <= 2000 and distance2 < driveline:#correct exepted error 
+            print("Right")
             steering.run_to_position(-SIDE_ADJUST_ANGLE, blocking=False) #add correct data to go right 
         else:
-            #print("None")
+            print("None")
             steering.run_to_position(0, blocking=False)#make vehicel go streight 
 
 def main():
