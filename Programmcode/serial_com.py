@@ -59,6 +59,10 @@ class Blob:
     def center(self) -> tuple[int,int]:
         return self.center_x, self.center_y
         pass
+    
+    @property
+    def area(self) -> int:
+        return self.width*self.height
     pass
 
 class Communicator:

@@ -1,58 +1,78 @@
-from cgitb import reset
-from dis import dis
 from serial_com import Communicator, Blob
 from serial.tools import list_ports_linux
 import buildhat
 import time
 import RPi.GPIO as GPIO
 
-driveline = 50#set correct data
+driveline = 500#set correct data
 #hardwhare info setup distance sensor to the left
 
-def makeTurn(right: bool, steering):#make the car turn aproxamatly 90 degrees will correct error automaticly probably 
-    if right:
-        steering.run_to_position(-100, blocking=False) #add correct data to go right
-        #wait for run distance on drive (set correct data and code)
+def maxRangeConvert(distance: int):
+    if distance == -1:
+        return 15000
     else:
-        steering.run_to_position(100, blocking=False) #add correct data to go left 
-        #wait for run distance on drive (set correct data and code)
+        return distance
+    pass
 
-
-
-def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
+TURN_TIME = 1.2
+LAST_TURN_TIME = -TURN_TIME
+def makeTurn(right: bool, steering, drive):#make the car turn aproxamatly 90 degrees will correct error automaticly probably 
+    global LAST_TURN_TIME
+    current_time = time.perf_counter()
+    # print("Time: ",current_time - LAST_TURN_TIME)
+    if current_time - LAST_TURN_TIME <= TURN_TIME: return
+    LAST_TURN_TIME = current_time
     
-    if(distance < 1000):
-        if distance2 > 1000:
-            makeTurn(True, steering)
-            driveline = 900
+    if right:
+        steering.run_to_position(MAIN_TURN, blocking=False) #add correct data to go right
+    else:
+        steering.run_to_position(-MAIN_TURN, blocking=False) #add correct data to go left 
+
+
+TURN_DISTANCE = 1_000
+MAIN_TURN = 100
+SIDE_ADJUST_ANGLE = 20
+def frame(steering, drive, distance, distance2, imageSize, blobs: list[Blob]):
+    global driveline
+    
+    print("Head distance:",distance)
+    print("Side adjust enabled:", time.perf_counter()-LAST_TURN_TIME > TURN_TIME)
+    
+    if(distance < TURN_DISTANCE):
+        if distance2 > 1200:
+            makeTurn(True, steering, drive)
+            #driveline = 900
             return
         else:
-            makeTurn(False, steering) 
-            driveline = 100
+            makeTurn(False, steering, drive) 
+            #driveline = 100
             return
     
     
     redSize = 0
     greenSize = 0
-    treshold = 100#set Treshold for minimal sice
+    treshold = 100#set Treshold for minimal size
     for blob in blobs: 
         if blob.type == "red_pillar":
-            redSize += blob.size
+            redSize += blob.area
         elif blob.type == "green_pillar":
-            greenSize += blob.size
+            greenSize += blob.area
     
-    if redSize > treshold and redSize>greenSize:
-        driveline = 900 #set correct data
-    elif greenSize > treshold and greenSize > redSize:
-        driveline = 50#set correct data
-        
-    if distance2 <= 1000: # correct sidebarier distance catch
-        if distance2 > driveline+20: # correct exeptet error range 
-            steering.run_to_position(10, blocking=False) #add correct data to go left 
-        elif distance2 < driveline-20:#correct exepted error 
-            steering.run_to_position(-10, blocking=False) #add correct data to go right 
+    # if redSize > treshold and redSize>greenSize:
+    #     driveline = 900 #set correct data
+    # elif greenSize > treshold and greenSize > redSize:
+    #     driveline = 50#set correct data
+    if time.perf_counter()-LAST_TURN_TIME > TURN_TIME and distance2 <= 1200: # correct sidebarier distance catch
+        #print(distance2)
+        if distance2 > driveline: # correct exeptet error range 
+            #print("Left")
+            steering.run_to_position(SIDE_ADJUST_ANGLE, blocking=False) #add correct data to go left 
+        elif distance2 < driveline:#correct exepted error 
+            #print("Right")
+            steering.run_to_position(-SIDE_ADJUST_ANGLE, blocking=False) #add correct data to go right 
         else:
-            steering.run_to_position(o, blocking=False)#make vehicel go streight 
+            #print("None")
+            steering.run_to_position(0, blocking=False)#make vehicel go streight 
 
 def main():
     print(*list_ports_linux.comports(),sep="\n")
@@ -66,7 +86,7 @@ def main():
     steering_motor = buildhat.Motor("B")
     driving_motor = buildhat.Motor("A")
     distance_sensor = buildhat.DistanceSensor("C")
-    color_sensor = buildhat.ColorSensor("D")
+    distance_sensor_2 = buildhat.DistanceSensor("D")
 
     while not GPIO.input(GPIO_Port): 
         time.sleep(1)
@@ -74,13 +94,20 @@ def main():
     
     # Set motors to start config
     steering_motor.run_to_position(0)
-    driving_motor.start(-25)
+    driving_motor.start(-100)
     
     try:
         while True:
             im_size, blobs = com.wait_for_data()
 
-            frame(steering_motor, driving_motor, distance_sensor.get_distance(),color_sensor.get_color() , im_size,blobs)
+            #print("Distance:",distance_sensor.get_distance())
+            frame(
+                steering_motor, 
+                driving_motor, 
+                maxRangeConvert(distance_sensor.get_distance()), 
+                maxRangeConvert(distance_sensor_2.get_distance()) , 
+                im_size,blobs
+            )
             pass
         pass
     finally:
